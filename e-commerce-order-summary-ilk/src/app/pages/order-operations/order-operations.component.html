@@ -1,0 +1,41 @@
+<a class="navbar-brand" href="http://localhost:4200">E-Commerce App</a>
+
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="order-tab" data-bs-toggle="tab" data-bs-target="#order" type="button" role="tab" aria-controls="order" aria-selected="true">Order</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="shipping-tab" data-bs-toggle="tab" data-bs-target="#shipping" type="button" role="tab" aria-controls="shipping" aria-selected="false">Shipping</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tax-tab" data-bs-toggle="tab" data-bs-target="#tax" type="button" role="tab" aria-controls="tax" aria-selected="false">Tax</button>
+  </li>
+</ul>
+
+<div class="tab-content" id="myTabContent">
+  <div class="tab-pane fade show active" id="order" role="tabpanel" aria-labelledby="order-tab">
+    <h3>Order Details:</h3>
+    <div *ngFor="let order of orders">
+      <p>Name: {{ order.name }}, Price: {{ order.price | currency:'USD':true }}, Quantity: {{ order.qty }}, Weight: {{ order.weight }}</p>
+    </div>
+    <br>
+    <h3>Order Details Total:</h3>
+    <span>{{ orderDetailsTotalAmount | currency:'USD':true }}</span><br>
+    <h3>Order Total:</h3>
+    <span>{{ orderTotal | currency:'USD':true }}</span><br>
+    <h3>Tax Amount:</h3>
+    <span>{{ taxAmount | currency:'USD':true }}</span>
+  </div>
+  <div class="tab-pane fade" id="shipping" role="tabpanel" aria-labelledby="shipping-tab">
+    <h3>Shipping:</h3>
+    <pre>
+      <strong>Carrier:</strong> <span>{{ shipping?.carrier }}</span><br>
+      <strong>Address:</strong> <span>{{ formatAddress(shipping?.address) }}</span><br>
+      <strong>Cost:</strong><span> {{ shipping?.cost | currency:'USD':true }}</span>
+    </pre><br>
+  </div>
+  <div class="tab-pane fade" id="tax" role="tabpanel" aria-labelledby="tax-tab">
+    <h3>Tax:</h3>
+    <span>{{ tax?.amount | percent }}</span><br>
+  </div>
+</div>
