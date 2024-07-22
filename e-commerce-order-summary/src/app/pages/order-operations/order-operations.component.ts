@@ -5,8 +5,8 @@ import { Shipping } from 'src/app/model/shipping';
 import { OrderService } from 'src/app/services/order/order.service';
 import { ShippingService } from 'src/app/services/shipping/shipping.service';
 import { TaxService } from 'src/app/services/tax/tax.service';
-import { mergeMap } from 'rxjs/operators';
-
+import { forkJoin, of } from 'rxjs';
+import { catchError, mergeMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-order-operations',
@@ -28,25 +28,43 @@ export class OrderOperationsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.getOrders();
-    this.getTax();
+    this.loadOrderSummary();
   }
 
-  getOrders() {
+  loadOrderSummary() {
     this.orderService.getOrderItems().pipe(
+      catchError(error => {
+        console.error('Error fetching order items', error);
+        alert("Error occurred while fetching orders");
+        return of([]);
+      }),
       mergeMap(orderItems => {
         this.orders = orderItems;
         this.amountCalculator();
-        return this.shippingService.getShipping(this.calculateTotalWeight(orderItems));
+        const totalWeight = this.calculateTotalWeight(orderItems);
+
+        return forkJoin({
+          shipping: this.shippingService.getShipping(totalWeight).pipe(
+            catchError(error => {
+              console.error('Error fetching shipping', error);
+              alert("Error occurred while fetching shipping");
+              return of(null);
+            })
+          ),
+          tax: this.taxService.getTax().pipe(
+            catchError(error => {
+              console.error('Error fetching tax', error);
+              alert("Error occurred while fetching tax");
+              return of(null);
+            })
+          )
+        });
       })
     ).subscribe(
-      (shippingResponse) => {
-        this.shipping = shippingResponse;
+      ({ shipping, tax }) => {
+        this.shipping = shipping;
+        this.tax = tax;
         this.calculateOrderTotal();
-      },
-      (errorResponse) => {
-        alert("Hata oluştu");
-        console.log(errorResponse);
       }
     );
   }
@@ -64,18 +82,6 @@ export class OrderOperationsComponent implements OnInit {
 
   private calculateTotalWeight(orderItems: Order[]): number {
     return orderItems.reduce((sum, item) => sum + (item.weight * item.qty), 0);
-  }
-
-  getTax() {
-    this.taxService.getTax().subscribe(
-      (response) => {
-        this.tax = response;
-        this.calculateOrderTotal();
-      },
-      (errorResponse) => {
-        console.log("Tax verisi alınamadı", errorResponse);
-      }
-    );
   }
 
   formatOrderDetails(order: Order): string {
