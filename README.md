@@ -23,6 +23,8 @@ Before you begin, ensure you have met the following requirements:
 # Backend server
 
 Run node server.js for the backend server. Navigate to http://localhost:3000/.
+  ```bash
+  node server.js
 
 # Frontend server
 
