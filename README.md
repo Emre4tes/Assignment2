@@ -22,7 +22,9 @@ Before you begin, ensure you have met the following requirements:
 
 # Backend server
 
-Run node server.js for the backend server. Navigate to http://localhost:3000/.
+- Run node server.js for the backend server. Navigate to http://localhost:3000/.
+  ```bash
+  node serve.js
 
 
 # Frontend server
@@ -33,10 +35,14 @@ The application will automatically reload if you change any of the source files.
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- ```bash
+  ng serve
 
 ## Code scaffolding
 
 Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+- ```bash
+  ng generate component component-name
 
 ## Build
 
