@@ -1,21 +1,19 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
-import { takeUntil, mergeMap } from 'rxjs/operators';
+import { Component, OnInit } from '@angular/core';
 import { Order } from 'src/app/model/order.model';
 import { Tax } from 'src/app/model/tax';
 import { Shipping } from 'src/app/model/shipping';
 import { OrderService } from 'src/app/services/order/order.service';
 import { ShippingService } from 'src/app/services/shipping/shipping.service';
 import { TaxService } from 'src/app/services/tax/tax.service';
+import { mergeMap } from 'rxjs/operators';
+
 
 @Component({
   selector: 'app-order-operations',
   templateUrl: './order-operations.component.html',
   styleUrls: ['./order-operations.component.scss'],
 })
-export class OrderOperationsComponent implements OnInit, OnDestroy {
-  private destroy$ = new Subject<void>();
-
+export class OrderOperationsComponent implements OnInit {
   orders: Order[] = [];
   tax: Tax | null = null;
   shipping: Shipping | null = null;
@@ -34,19 +32,13 @@ export class OrderOperationsComponent implements OnInit, OnDestroy {
     this.getTax();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
   getOrders() {
     this.orderService.getOrderItems().pipe(
       mergeMap(orderItems => {
         this.orders = orderItems;
         this.amountCalculator();
         return this.shippingService.getShipping(this.calculateTotalWeight(orderItems));
-      }),
-      takeUntil(this.destroy$)
+      })
     ).subscribe(
       (shippingResponse) => {
         this.shipping = shippingResponse;
@@ -75,9 +67,7 @@ export class OrderOperationsComponent implements OnInit, OnDestroy {
   }
 
   getTax() {
-    this.taxService.getTax().pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(
+    this.taxService.getTax().subscribe(
       (response) => {
         this.tax = response;
         this.calculateOrderTotal();
