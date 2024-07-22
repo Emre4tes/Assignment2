@@ -18,15 +18,12 @@ Before you begin, ensure you have met the following requirements:
 
   ```bash
   npm install -g @angular/cli
-  ng new my-angular-app
-  cd my-angular-app
-  ng new component
-  node server.js
 
 
 # Backend server
 
 Run node server.js for the backend server. Navigate to http://localhost:3000/.
+
 
 # Frontend server
 
