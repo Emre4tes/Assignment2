@@ -1,10 +1,24 @@
 const express = require('express');
 const cors = require('cors');
+const checkAuth = require('./authMiddleware');
 
 const app = express();
 const port = 3000;
+const uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59';
 
 app.use(cors());
+app.use(bodyParser.json());
+app.use('/api', checkAuth);
+
+app.use((req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader === uniqueIdentifier) {
+    next();
+  } else {
+    res.status(403).send('Forbidden');
+  }
+});
+
 
 app.get('/order', (_req, res) => {
   const order = [
@@ -35,6 +49,10 @@ app.get('/shipping', (_req, res) => {
 app.get('/tax', (_req, res) => {
   const tax = { amount: 0.07 };
   res.json(tax);
+});
+
+app.use((req, res) => {
+  res.status(404).json({ message: 'Endpoint not found' });
 });
 
 app.listen(port, () => {

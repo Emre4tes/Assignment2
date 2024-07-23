@@ -1,10 +1,11 @@
 
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 
 import { AppComponent } from './app.component';
 import { OrderOperationsComponent } from './pages/order-operations/order-operations.component';
+import { AuthInterceptorService } from './services/auth-interceptor/auth-interceptor.service';
 
 
 
@@ -17,7 +18,8 @@ import { OrderOperationsComponent } from './pages/order-operations/order-operati
     BrowserModule,
     HttpClientModule
   ],
-  providers: [],
-  bootstrap: [AppComponent]
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true }
+  ],  bootstrap: [AppComponent]
 })
 export class AppModule { }

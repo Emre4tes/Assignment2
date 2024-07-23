@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Order } from 'src/app/model/order.model';
 import { ApiConfig } from 'src/app/config/api.config';
@@ -9,11 +9,15 @@ import { ApiConfig } from 'src/app/config/api.config';
 })
 export class OrderService {
   private orderUrl = `${ApiConfig.baseUrl}/order`;
+  private readonly AUTH_KEY = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59';
 
   constructor(private http: HttpClient) {}
 
-
+  private getHeaders(): HttpHeaders {
+    return new HttpHeaders().set('Authorization', `Bearer ${this.AUTH_KEY}`);
+  }
   getOrderItems(): Observable<Order[]> {
-    return this.http.get<Order[]>(this.orderUrl);
+    const headers = this.getHeaders();
+    return this.http.get<Order[]>(this.orderUrl, { headers });
   }
 }
