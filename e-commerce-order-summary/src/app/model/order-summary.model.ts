@@ -3,7 +3,7 @@ import { Shipping } from './shipping';
 import { Tax } from './tax';
 
 export interface IOrderSummary {
-  order: Order;
+  order: Order[];
   shipping: Shipping;
   tax: Tax;
 }

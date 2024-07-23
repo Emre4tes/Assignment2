@@ -1,21 +1,20 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { ApiConfig } from 'src/app/config/api.config';
 import { Observable } from 'rxjs';
-import { Tax } from 'src/app/model/tax';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TaxService {
-  getTaxDetails() {
+  getTax() {
     throw new Error('Method not implemented.');
   }
-  private apiUrl = 'http://localhost:3000/tax';
+  private taxUrl = `${ApiConfig.baseUrl}/tax`;
 
   constructor(private http: HttpClient) {}
 
-  getTax(): Observable<Tax> {
-
-    return this.http.get<Tax>(this.apiUrl);
+  getTaxData(): Observable<any> {
+    return this.http.get<any>(this.taxUrl);
   }
 }

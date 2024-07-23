@@ -1,17 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { ApiConfig } from 'src/app/config/api.config';
 import { Observable } from 'rxjs';
-import { Shipping } from 'src/app/model/shipping';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ShippingService {
-  private apiUrl = 'http://localhost:3000/shipping';
+  private shippingUrl = `${ApiConfig.baseUrl}/shipping`;
 
   constructor(private http: HttpClient) {}
 
-  getShipping(totalWeight: any): Observable<Shipping> {
-    return this.http.get<Shipping>(this.apiUrl);
+  getShippingData(weight: number): Observable<any> {
+    return this.http.get(`${this.shippingUrl}?weight=${weight}`);
   }
 }

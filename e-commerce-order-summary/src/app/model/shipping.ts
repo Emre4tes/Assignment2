@@ -11,6 +11,7 @@ export interface ShippingAddress {
 
 export interface Shipping {
   carrier: string;
-  address: ShippingAddress;
+  address: string;
+  description: string;
   cost: number;
 }

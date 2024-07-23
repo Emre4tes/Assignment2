@@ -35,7 +35,7 @@ export class OrderOperationsComponent implements OnInit {
     this.orderService.getOrderItems().pipe(
       catchError(error => {
         console.error('Error fetching order items', error);
-        alert("Error occurred while fetching orders");
+        alert('Error occurred while fetching orders');
         return of([]);
       }),
       mergeMap(orderItems => {
@@ -44,17 +44,17 @@ export class OrderOperationsComponent implements OnInit {
         const totalWeight = this.calculateTotalWeight(orderItems);
 
         return forkJoin({
-          shipping: this.shippingService.getShipping(totalWeight).pipe(
+          shipping: this.shippingService.getShippingData(totalWeight).pipe(
             catchError(error => {
               console.error('Error fetching shipping', error);
-              alert("Error occurred while fetching shipping");
+              alert('Error occurred while fetching shipping');
               return of(null);
             })
           ),
-          tax: this.taxService.getTax().pipe(
+          tax: this.taxService.getTaxData().pipe(
             catchError(error => {
               console.error('Error fetching tax', error);
-              alert("Error occurred while fetching tax");
+              alert('Error occurred while fetching tax');
               return of(null);
             })
           )

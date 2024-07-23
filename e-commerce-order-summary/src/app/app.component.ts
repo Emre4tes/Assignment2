@@ -7,9 +7,4 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'e-commerce-order-summary';
-  posts: any;
-
-  constructor(){}
-
-
 }

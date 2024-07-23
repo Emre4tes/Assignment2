@@ -1,47 +1,64 @@
-import { IOrderSummary } from './../../model/order-summary.model';
-import { Tax } from 'src/app/model/tax';
-import { Shipping } from 'src/app/model/shipping';
-import { Order } from 'src/app/model/order.model';
-
+// order-summary.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin, of } from 'rxjs';
-import { mergeMap} from 'rxjs/operators';
+import { catchError, mergeMap, retry } from 'rxjs/operators';
+import { OrderService } from 'src/app/services/order/order.service';
+import { ShippingService } from 'src/app/services/shipping/shipping.service';
+import { TaxService } from 'src/app/services/tax/tax.service';
+import { ApiConfig } from 'src/app/config/api.config';
+import { IOrderSummary } from 'src/app/model/order-summary.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OrderSummaryService {
-  private orderUrl = 'api/order';
-  private shippingUrl = 'api/shipping';
-  private taxUrl = 'api/tax';
+  private readonly RETRY_COUNT = 5;
 
-  constructor(private http: HttpClient) {}
-
-  getOrder(): Observable<Order> {
-    return this.http.get<Order>(this.orderUrl);
-  }
-
-  getShipping(totalWeight: number): Observable<Shipping> {
-    return this.http.get<Shipping>(`${this.shippingUrl}?weight=${totalWeight}`);
-  }
-
-  getTax(): Observable<Tax> {
-    return this.http.get<Tax>(this.taxUrl);
-  }
+  constructor(
+    private orderService: OrderService,
+    private shippingService: ShippingService,
+    private taxService: TaxService
+  ) {}
 
   getSummary(): Observable<IOrderSummary> {
-    return this.getOrder().pipe(
-      mergeMap(order => {
-        const totalWeight = order.order.reduce((acc: number, item: { weight: number; qty: number; }) => acc + item.weight * item.qty, 0);
+    return forkJoin({
+      order: this.orderService.getOrderItems().pipe(
+        retry(this.RETRY_COUNT),
+        catchError(error => {
+          console.error('Error fetching order items', error);
+          alert('Error occurred while fetching order items');
+          return of([]);
+        })
+      ),
+      tax: this.taxService.getTaxData().pipe(
+        retry(this.RETRY_COUNT),
+        catchError(error => {
+          console.error('Error fetching tax', error);
+          alert('Error occurred while fetching tax');
+          return of({ amount: 0, description: 'No tax available' } as any);
+        })
+      )
+    }).pipe(
+      mergeMap(({ order, tax }) => {
+        const totalWeight = order.reduce((acc, item) => acc + item.weight * item.qty, 0);
 
-        return forkJoin({
-          order: of(order),
-          shipping: this.getShipping(totalWeight),
-          tax: this.getTax()
-        });
+        return this.shippingService.getShippingData(totalWeight).pipe(
+          retry(this.RETRY_COUNT),
+          catchError(error => {
+            console.error('Error fetching shipping cost', error);
+            alert('Error occurred while fetching shipping cost');
+            return of({ cost: 0, description: 'No shipping cost available', carrier: '', address: '' } as any);
+          }),
+          mergeMap(shipping => {
+            return of({
+              order,
+              shipping,
+              tax
+            } as IOrderSummary);
+          })
+        );
       })
     );
   }
-
 }
