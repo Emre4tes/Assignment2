@@ -1,11 +1,17 @@
 const express = require('express');
 const cors = require('cors');
-
+const bodyParser = require('body-parser');
+const authMiddleware = require('./authMilddleware');
 
 const app = express();
 const port = 3000;
 
+
 app.use(cors());
+
+app.use(bodyParser.json());
+
+app.use(authMiddleware);
 
 app.get('/order', (_req, res) => {
   const order = [
@@ -36,6 +42,10 @@ app.get('/shipping', (_req, res) => {
 app.get('/tax', (_req, res) => {
   const tax = { amount: 0.07 };
   res.json(tax);
+});
+
+app.use((_req, res) => {
+  res.status(404).json({ message: 'Endpoint not found' });
 });
 
 app.listen(port, () => {
