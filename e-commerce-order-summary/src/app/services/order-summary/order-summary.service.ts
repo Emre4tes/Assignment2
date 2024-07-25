@@ -1,12 +1,10 @@
-
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin, of } from 'rxjs';
-import { catchError, mergeMap, retry } from 'rxjs/operators';
+import { catchError, delay, mergeMap, retry } from 'rxjs/operators';
 import { OrderService } from 'src/app/services/order/order.service';
 import { ShippingService } from 'src/app/services/shipping/shipping.service';
 import { TaxService } from 'src/app/services/tax/tax.service';
-import { ApiConfig } from 'src/app/config/api.config';
 import { IOrderSummary } from 'src/app/model/order-summary.model';
 
 @Injectable({
@@ -14,6 +12,7 @@ import { IOrderSummary } from 'src/app/model/order-summary.model';
 })
 export class OrderSummaryService {
   private readonly RETRY_COUNT = 5;
+  private readonly DELAY_MS = 1000;
 
   constructor(
     private orderService: OrderService,
@@ -25,6 +24,7 @@ export class OrderSummaryService {
     return forkJoin({
       order: this.orderService.getOrderItems().pipe(
         retry(this.RETRY_COUNT),
+        delay(this.DELAY_MS),
         catchError(error => {
           console.error('Error fetching order items', error);
           alert('Error occurred while fetching order items');
@@ -33,6 +33,7 @@ export class OrderSummaryService {
       ),
       tax: this.taxService.getTaxData().pipe(
         retry(this.RETRY_COUNT),
+        delay(this.DELAY_MS),
         catchError(error => {
           console.error('Error fetching tax', error);
           alert('Error occurred while fetching tax');
@@ -45,6 +46,7 @@ export class OrderSummaryService {
 
         return this.shippingService.getShippingData(totalWeight).pipe(
           retry(this.RETRY_COUNT),
+          delay(this.DELAY_MS),
           catchError(error => {
             console.error('Error fetching shipping cost', error);
             alert('Error occurred while fetching shipping cost');
