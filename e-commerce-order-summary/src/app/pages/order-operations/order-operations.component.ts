@@ -5,7 +5,7 @@ import { Shipping } from 'src/app/model/shipping';
 import { OrderService } from 'src/app/services/order/order.service';
 import { ShippingService } from 'src/app/services/shipping/shipping.service';
 import { TaxService } from 'src/app/services/tax/tax.service';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { catchError, mergeMap } from 'rxjs/operators';
 
 @Component({
@@ -31,13 +31,9 @@ export class OrderOperationsComponent implements OnInit {
     this.loadOrderSummary();
   }
 
-  loadOrderSummary() {
+  private loadOrderSummary() {
     this.orderService.getOrderItems().pipe(
-      catchError(error => {
-        console.error('Error fetching order items', error);
-        alert('Error occurred while fetching orders');
-        return of([]);
-      }),
+      catchError(this.handleError('order items', [])),
       mergeMap(orderItems => {
         this.orders = orderItems;
         this.amountCalculator();
@@ -45,18 +41,10 @@ export class OrderOperationsComponent implements OnInit {
 
         return forkJoin({
           shipping: this.shippingService.getShippingData(totalWeight).pipe(
-            catchError(error => {
-              console.error('Error fetching shipping', error);
-              alert('Error occurred while fetching shipping');
-              return of(null);
-            })
+            catchError(this.handleError('shipping', null))
           ),
           tax: this.taxService.getTaxData().pipe(
-            catchError(error => {
-              console.error('Error fetching tax', error);
-              alert('Error occurred while fetching tax');
-              return of(null);
-            })
+            catchError(this.handleError('tax', null))
           )
         });
       })
@@ -69,12 +57,20 @@ export class OrderOperationsComponent implements OnInit {
     );
   }
 
+  private handleError<T>(operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+      console.error(`Error fetching ${operation}`, error);
+      alert(`Error occurred while fetching ${operation}`);
+      return of(result as T);
+    };
+  }
+
   private amountCalculator() {
     this.orderDetailsTotalAmount = this.orders.reduce((acc, item) => acc + (item.price * item.qty), 0);
   }
 
   private calculateOrderTotal() {
-    if (this.tax && this.orderDetailsTotalAmount && this.shipping) {
+    if (this.tax && this.shipping) {
       this.taxAmount = this.orderDetailsTotalAmount * this.tax.amount;
       this.orderTotal = this.orderDetailsTotalAmount + this.taxAmount + this.shipping.cost;
     }
