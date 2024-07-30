@@ -7,6 +7,7 @@ import { IOrderSummary } from 'src/app/model/order-summary.model';
 import { Order } from 'src/app/model/order.model';
 import { Tax } from 'src/app/model/tax';
 import { Shipping } from 'src/app/model/order-summary.model';
+import { catchError, delay, forkJoin, mergeMap, Observable, of, retry } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -21,6 +22,64 @@ export class OrderSummaryService {
     private taxService: TaxService
   ) {}
 
+  private handleError<T>(operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+      console.error(`${operation} failed: ${error.message}`);
+      alert(`Error occurred while fetching ${operation}`);
+      return of(result as T);
+    };
+  }
+
+  private applyRetryAndDelay<T>(
+    observable: Observable<T>,
+    operation: string,
+    result: T
+  ): Observable<T> {
+    return observable.pipe(
+      retry(this.RETRY_COUNT),
+      delay(this.DELAY_MS),
+      catchError(this.handleError(operation, result))
+    );
+  }
+
+  getSummary(): Observable<IOrderSummary> {
+    return forkJoin({
+      order: this.applyRetryAndDelay(
+        this.orderService.getOrderItems(),
+        'order items',
+        []
+      ),
+      tax: this.applyRetryAndDelay(this.taxService.getTaxData(), 'tax', {
+        amount: 0,
+        description: 'No tax available',
+      }),
+    }).pipe(
+      mergeMap(({ order, tax }) => {
+        const totalWeight = order.reduce(
+          (acc, item) => acc + item.weight * item.qty,
+          0
+        );
+
+        return this.applyRetryAndDelay(
+          this.shippingService.getShippingData(totalWeight),
+          'shipping cost',
+          {
+            cost: 0,
+            description: 'No shipping cost available',
+            carrier: '',
+            address: '',
+          }
+        ).pipe(
+          mergeMap((shipping) => of({ order, shipping, tax } as IOrderSummary))
+        );
+      })
+    );
+  }
+}
+
+
+//Promise kullanırsak
+/*
   private async retry<T>(fn: () => Promise<T>, retries: number): Promise<T> {
     let lastError: any;
     for (let attempt = 0; attempt < retries; attempt++) {
@@ -91,6 +150,4 @@ export class OrderSummaryService {
     } catch (error) {
       console.error('Error fetching order summary:', this.getErrorMessage(error));
       throw error;
-    }
-  }
-}
+    }*/
