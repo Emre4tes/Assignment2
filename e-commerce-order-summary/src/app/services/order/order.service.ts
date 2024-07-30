@@ -43,7 +43,7 @@ export class OrderService {
 }
 
 
-//Promise kullanırsak
+//Alternatif olarak Promise kullanırsak
   /*
   async getOrderItems(): Promise<Order[]> {
     const headers = this.getHeaders();

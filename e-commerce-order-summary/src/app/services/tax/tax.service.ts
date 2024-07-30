@@ -44,7 +44,7 @@ export class TaxService {
 }
 
 
-//Promise kullanırsak
+//Alternatif olarak Promise kullanırsak
 
   /*
   public async getTaxData(): Promise<Tax> {

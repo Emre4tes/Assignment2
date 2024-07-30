@@ -78,7 +78,7 @@ export class OrderSummaryService {
 }
 
 
-//Promise kullanırsak
+// Alternatif olarak Promise kullanırsak
 /*
   private async retry<T>(fn: () => Promise<T>, retries: number): Promise<T> {
     let lastError: any;

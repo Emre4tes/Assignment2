@@ -39,7 +39,7 @@ export class ShippingService {
 }
 
 
-//Promise kullanırsak
+// Alternatif olarak Promise kullanırsak
   /*
   async getShippingData(weight: number): Promise<any> {
     const headers = this.getHeaders();
