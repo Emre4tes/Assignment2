@@ -49,10 +49,6 @@ export class OrderOperationsComponent implements OnInit {
     }
   }
 
-  private handleError(operation: string, error: any): void {
-    console.error(`Error during ${operation}:`, error);
-    // Optionally show a user-friendly error message
-  }
 
   private amountCalculator(): void {
     this.orderDetailsTotalAmount = this.orders.reduce((acc, item) => acc + (item.price * item.qty), 0);
