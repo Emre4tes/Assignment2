@@ -2,13 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { ApiConfig } from 'src/app/config/api.config';
+import { environment } from 'src/environment/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ShippingService {
-  private shippingUrl = `${ApiConfig.baseUrl}/shipping`;
+  private shippingUrl = `${environment.apiUrl}/shipping`;
   private readonly uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59';
 
   constructor(private http: HttpClient) {}

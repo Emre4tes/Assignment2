@@ -15,8 +15,8 @@ const check = (req, res, next) => {
     next();
     console.log('Valid Token');
   } else {
-    console.log('Forbidden - Invalid Token');
-    res.status(403).send('Forbidden');
+    console.log('Unauthorized - Invalid Token');
+    res.status(401).send('Unauthorized');
   }
 };
 

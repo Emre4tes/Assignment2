@@ -1,13 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { OrderService } from 'src/app/services/order/order.service';
 import { ShippingService } from 'src/app/services/shipping/shipping.service';
 import { TaxService } from 'src/app/services/tax/tax.service';
 import { IOrderSummary } from 'src/app/model/order-summary.model';
-import { Order } from 'src/app/model/order.model';
-import { Tax } from 'src/app/model/tax';
-import { Shipping } from 'src/app/model/order-summary.model';
-import { catchError, delay, forkJoin, mergeMap, Observable, of, retry } from 'rxjs';
+import { catchError, delay, forkJoin, Observable, of, retry, switchMap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -54,7 +50,7 @@ export class OrderSummaryService {
         description: 'No tax available',
       }),
     }).pipe(
-      mergeMap(({ order, tax }) => {
+      switchMap(({ order, tax }) => {
         const totalWeight = order.reduce(
           (acc, item) => acc + item.weight * item.qty,
           0
@@ -70,7 +66,7 @@ export class OrderSummaryService {
             address: '',
           }
         ).pipe(
-          mergeMap((shipping) => of({ order, shipping, tax } as IOrderSummary))
+          switchMap((shipping) => of({ order, shipping, tax } as IOrderSummary))
         );
       })
     );

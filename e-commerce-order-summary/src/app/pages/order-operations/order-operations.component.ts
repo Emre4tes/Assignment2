@@ -5,8 +5,8 @@ import { Shipping } from 'src/app/model/shipping';
 import { OrderService } from 'src/app/services/order/order.service';
 import { ShippingService } from 'src/app/services/shipping/shipping.service';
 import { TaxService } from 'src/app/services/tax/tax.service';
-import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, mergeMap } from 'rxjs/operators';
+import { forkJoin, Observable } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-order-operations',
@@ -15,8 +15,8 @@ import { catchError, mergeMap } from 'rxjs/operators';
 })
 export class OrderOperationsComponent implements OnInit {
   orders: Order[] = [];
-  tax: Tax | null = null;
-  shipping: Shipping | null = null;
+  tax: Tax | undefined = undefined;
+  shipping: Shipping | undefined = undefined;
   orderDetailsTotalAmount: number = 0;
   orderTotal: number = 0;
   taxAmount: number = 0;
@@ -33,21 +33,28 @@ export class OrderOperationsComponent implements OnInit {
 
   private loadOrderSummary() {
     this.orderService.getOrderItems().pipe(
-      catchError(this.handleError('order items', [])),
-      mergeMap(orderItems => {
+      switchMap(orderItems => {
         this.orders = orderItems;
         this.amountCalculator();
         const totalWeight = this.calculateTotalWeight(orderItems);
 
         return forkJoin({
           shipping: this.shippingService.getShippingData(totalWeight).pipe(
-            catchError(this.handleError('shipping', null))
+            catchError(this.orderService.handleError<Shipping>('shipping', undefined))
           ),
           tax: this.taxService.getTaxData().pipe(
-            catchError(this.handleError('tax', null))
+            catchError(this.orderService.handleError<Tax>('tax', undefined))
           )
-        });
-      })
+        }).pipe(
+          switchMap(({ shipping, tax }) => {
+            return new Observable<any>(observer => {
+              observer.next({ orderItems, shipping, tax });
+              observer.complete();
+            });
+          })
+        );
+      }),
+      catchError(this.orderService.handleError<Order[]>('order items', []))
     ).subscribe(
       ({ shipping, tax }) => {
         this.shipping = shipping;
@@ -55,14 +62,6 @@ export class OrderOperationsComponent implements OnInit {
         this.calculateOrderTotal();
       }
     );
-  }
-
-  private handleError<T>(operation = 'operation', result?: T) {
-    return (error: any): Observable<T> => {
-      console.error(`Error fetching ${operation}`, error);
-      alert(`Error occurred while fetching ${operation}`);
-      return of(result as T);
-    };
   }
 
   private amountCalculator() {
@@ -89,3 +88,33 @@ export class OrderOperationsComponent implements OnInit {
     return `${address.address_line1}, ${address.city_locality}, ${address.state_province}`;
   }
 }
+
+
+
+
+
+// Pormise kullanırsak
+
+/*
+async ngOnInit(): Promise<void> {
+  await this.loadOrderSummary();
+}
+
+private async loadOrderSummary(): Promise<void> {
+  try {
+    const orderItems = await this.orderService.getOrderItems().toPromise();
+    this.orders = orderItems;
+    this.amountCalculator();
+    const totalWeight = this.calculateTotalWeight(orderItems);
+
+    const shippingPromise = this.shippingService.getShippingData(totalWeight).toPromise();
+    const taxPromise = this.taxService.getTaxData().toPromise();
+
+    const [shipping, tax] = await Promise.all([shippingPromise, taxPromise]);
+
+    this.shipping = shipping;
+    this.tax = tax;
+    this.calculateOrderTotal();
+  } catch (error) {
+    this.handleError(error);
+  }*/

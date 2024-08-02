@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ApiConfig } from 'src/app/config/api.config';
-import { Tax } from 'src/app/model/tax';
 import { catchError, Observable, throwError } from 'rxjs';
+import { environment } from 'src/environment/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +10,7 @@ export class TaxService {
   getTaxUrl(): string {
     throw new Error('Method not implemented.');
   }
-  private taxUrl = `${ApiConfig.baseUrl}/tax`;
+  private taxUrl = `${environment.apiUrl}/tax`;
   private readonly uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59';
 
   constructor(private http: HttpClient) {}
