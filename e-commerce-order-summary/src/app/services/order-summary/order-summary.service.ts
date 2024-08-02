@@ -74,6 +74,7 @@ export class OrderSummaryService {
 }
 
 
+
 // Alternatif olarak Promise kullanırsak
 /*
   private async retry<T>(fn: () => Promise<T>, retries: number): Promise<T> {

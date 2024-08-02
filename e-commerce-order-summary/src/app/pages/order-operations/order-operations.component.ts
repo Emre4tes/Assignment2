@@ -5,7 +5,7 @@ import { Shipping } from 'src/app/model/shipping';
 import { OrderService } from 'src/app/services/order/order.service';
 import { ShippingService } from 'src/app/services/shipping/shipping.service';
 import { TaxService } from 'src/app/services/tax/tax.service';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
 @Component({
@@ -39,22 +39,15 @@ export class OrderOperationsComponent implements OnInit {
         const totalWeight = this.calculateTotalWeight(orderItems);
 
         return forkJoin({
-          shipping: this.shippingService.getShippingData(totalWeight).pipe(
-            catchError(this.orderService.handleError<Shipping>('shipping', undefined))
-          ),
-          tax: this.taxService.getTaxData().pipe(
-            catchError(this.orderService.handleError<Tax>('tax', undefined))
-          )
+          shipping: this.shippingService.getShippingData(totalWeight),
+          tax: this.taxService.getTaxData()
         }).pipe(
-          switchMap(({ shipping, tax }) => {
-            return new Observable<any>(observer => {
-              observer.next({ orderItems, shipping, tax });
-              observer.complete();
-            });
+          catchError(error => {
+            console.error('Error fetching data', error);
+            return of({ shipping: undefined, tax: undefined });
           })
         );
-      }),
-      catchError(this.orderService.handleError<Order[]>('order items', []))
+      })
     ).subscribe(
       ({ shipping, tax }) => {
         this.shipping = shipping;
@@ -88,6 +81,7 @@ export class OrderOperationsComponent implements OnInit {
     return `${address.address_line1}, ${address.city_locality}, ${address.state_province}`;
   }
 }
+
 
 
 
