@@ -3,15 +3,12 @@ import { OrderService } from 'src/app/services/order/order.service';
 import { ShippingService } from 'src/app/services/shipping/shipping.service';
 import { TaxService } from 'src/app/services/tax/tax.service';
 import { IOrderSummary } from 'src/app/model/order-summary.model';
-import { catchError, delay, forkJoin, Observable, of, retry, switchMap } from 'rxjs';
+import { catchError, forkJoin, Observable, of, switchMap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
 })
 export class OrderSummaryService {
-  private readonly RETRY_COUNT = 5;
-  private readonly DELAY_MS = 1000;
-
   constructor(
     private orderService: OrderService,
     private shippingService: ShippingService,
@@ -26,29 +23,17 @@ export class OrderSummaryService {
     };
   }
 
-  private applyRetryAndDelay<T>(
-    observable: Observable<T>,
-    operation: string,
-    result: T
-  ): Observable<T> {
-    return observable.pipe(
-      retry(this.RETRY_COUNT),
-      delay(this.DELAY_MS),
-      catchError(this.handleError(operation, result))
-    );
-  }
-
   getSummary(): Observable<IOrderSummary> {
     return forkJoin({
-      order: this.applyRetryAndDelay(
-        this.orderService.getOrderItems(),
-        'order items',
-        []
+      order: this.orderService.getOrderItems().pipe(
+        catchError(this.handleError('order items', []))
       ),
-      tax: this.applyRetryAndDelay(this.taxService.getTaxData(), 'tax', {
-        amount: 0,
-        description: 'No tax available',
-      }),
+      tax: this.taxService.getTaxData().pipe(
+        catchError(this.handleError('tax', {
+          amount: 0,
+          description: 'No tax available',
+        }))
+      ),
     }).pipe(
       switchMap(({ order, tax }) => {
         const totalWeight = order.reduce(
@@ -56,16 +41,13 @@ export class OrderSummaryService {
           0
         );
 
-        return this.applyRetryAndDelay(
-          this.shippingService.getShippingData(totalWeight),
-          'shipping cost',
-          {
+        return this.shippingService.getShippingData(totalWeight).pipe(
+          catchError(this.handleError('shipping cost', {
             cost: 0,
             description: 'No shipping cost available',
             carrier: '',
             address: '',
-          }
-        ).pipe(
+          })),
           switchMap((shipping) => of({ order, shipping, tax } as IOrderSummary))
         );
       })

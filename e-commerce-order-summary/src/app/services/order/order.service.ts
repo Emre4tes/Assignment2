@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
+import { catchError, delay, retry } from 'rxjs/operators';
 import { Order } from 'src/app/model/order.model';
 import { environment } from 'src/environment/environment';
 import { BaseService } from '../Base/base.service';
@@ -9,14 +10,31 @@ import { BaseService } from '../Base/base.service';
   providedIn: 'root'
 })
 export class OrderService extends BaseService {
+  private readonly RETRY_COUNT = 5;
+  private readonly DELAY_MS = 1000;
   protected apiUrl = `${environment.apiUrl}/order`;
 
+  constructor(protected override http: HttpClient) {
+    super(http);
+  }
+
+  private applyRetryAndDelay<T>(observable: Observable<T>, operation: string, result: T): Observable<T> {
+    return observable.pipe(
+      retry(this.RETRY_COUNT),
+      delay(this.DELAY_MS),
+      catchError(this.handleError(operation, result))
+    );
+  }
+
   getOrderItems(): Observable<Order[]> {
-    return this.http.get<Order[]>(this.apiUrl, { headers: this.getHeaders() }).pipe(
-      catchError(this.handleError('getOrderItems', []))
+    return this.applyRetryAndDelay(
+      this.http.get<Order[]>(this.apiUrl, { headers: this.getHeaders() }),
+      'getOrderItems',
+      []
     );
   }
 }
+
 
 
 

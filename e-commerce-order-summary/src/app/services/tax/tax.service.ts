@@ -1,20 +1,42 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { catchError, Observable } from 'rxjs';
+import { catchError, delay,retry } from 'rxjs/operators';
 import { environment } from 'src/environment/environment';
 import { BaseService } from '../Base/base.service';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Tax } from 'src/app/model/tax';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TaxService extends BaseService {
+  private readonly RETRY_COUNT = 5;
+  private readonly DELAY_MS = 1000;
   protected apiUrl = `${environment.apiUrl}/tax`;
 
-  getTaxData(): Observable<any> {
-    return this.http.get<any>(this.apiUrl, { headers: this.getHeaders() }).pipe(
-      catchError(this.handleError('getTaxData'))
+  constructor(protected override http: HttpClient) {
+    super(http);
+  }
+
+
+  private applyRetryAndDelay<T>(observable: Observable<T>, operation: string, result: T): Observable<T> {
+    return observable.pipe(
+      retry(this.RETRY_COUNT),
+      delay(this.DELAY_MS),
+      catchError(this.handleError(operation, result))
     );
   }
+
+  getTaxData(): Observable<Tax> {
+    return this.applyRetryAndDelay(
+      this.http.get<Tax>(this.apiUrl, { headers: this.getHeaders() }),
+      'getTaxData',
+      {
+        amount: 0,
+      }
+    );
+  }
+
 }
 
 
