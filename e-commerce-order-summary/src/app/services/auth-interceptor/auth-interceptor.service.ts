@@ -13,7 +13,7 @@ export class AuthInterceptorService implements HttpInterceptor {
       }
     });
 
-    console.log('Intercepted Request:',clonedRequest);
+    //console.log('Intercepted Request:',clonedRequest);
     return next.handle(clonedRequest);
   }
 }
