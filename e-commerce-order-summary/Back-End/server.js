@@ -8,6 +8,15 @@ const port = 3000;
 
 const uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59';
 
+//Return http status 429 as 30% range
+function rateLimiter( _req,res, next)  {
+  if (Math.random() < 0.3) { // %30 oranında bir uygulama, her 10 isteğin 3'ünde HTTP 429 döndürecektir.
+    return res.status(429).json({ error: 'Too Many Requests' });
+  }
+  next(); // İstek başarılıysa devam et
+};
+
+
 const check = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   console.log('Authorization Header:', authHeader);
@@ -20,7 +29,15 @@ const check = (req, res, next) => {
   }
 };
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:4200', // İstemci uygulamanızın URL'si
+  optionsSuccessStatus: 200, // Tarayıcıların CORS preflight (ön kontrol) istekleri için döndürülecek başarı durum kodu
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // İzin verilen HTTP yöntemleri
+  allowedHeaders: ['Content-Type', 'Authorization'], // İzin verilen başlıklar
+  credentials: true // Kimlik doğrulama bilgileri (örneğin, çerezler) gönderilmesine izin verir
+}));
+
+app.use(rateLimiter);//İstemcilerin belirli bir süre içinde yapabilecekleri istek sayısını sınırlayarak, hizmetinizin kötüye kullanımını önler
 app.use(bodyParser.json());
 app.use(check);
 
@@ -54,6 +71,16 @@ app.get('/shipping', (_req, res) => {
 app.get('/tax', (_req, res) => {
   const tax = { amount: 0.07 };
   res.json(tax);
+});
+
+app.use((_req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+   // HTTP yanıtında CORS başlığı olarak 'Access-Control-Allow-Origin' ayarlanır
+  // '*' işareti, tüm kökenlerden gelen isteklerin kabul edileceğini belirtir
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+   // İstemcinin isteklerde kullanabileceği başlıkların listesini belirtir
+   // HTTP yanıtında CORS başlığı olarak 'Access-Control-Allow-Headers' ayarlanır
+  next();
 });
 
 
