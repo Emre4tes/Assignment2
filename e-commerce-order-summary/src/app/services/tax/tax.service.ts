@@ -11,7 +11,7 @@ import { Tax } from 'src/app/model/tax';
 })
 export class TaxService extends BaseService {
   private readonly RETRY_COUNT = 5;
-  private readonly DELAY_MS = 1000;
+  private readonly DELAY_MS = 100;
   protected apiUrl = `${environment.apiUrl}/tax`;
 
   constructor(protected override http: HttpClient) {

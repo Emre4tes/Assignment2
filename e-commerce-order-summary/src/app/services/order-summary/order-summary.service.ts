@@ -24,6 +24,7 @@ export class OrderSummaryService {
   }
 
   getSummary(): Observable<IOrderSummary> {
+
     return forkJoin({
       order: this.orderService.getOrderItems().pipe(
         catchError(this.handleError('order items', []))

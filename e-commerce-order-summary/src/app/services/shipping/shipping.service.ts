@@ -12,7 +12,7 @@ import { Shipping } from 'src/app/model/shipping';
 })
 export class ShippingService extends BaseService {
   private readonly RETRY_COUNT = 5;
-  private readonly DELAY_MS = 1000;
+  private readonly DELAY_MS = 100;
   protected apiUrl = `${environment.apiUrl}/shipping`;
 
   constructor(protected override http: HttpClient) {
