@@ -15,8 +15,8 @@ import { catchError, switchMap } from 'rxjs/operators';
 })
 export class OrderOperationsComponent implements OnInit {
   orders: Order[] = [];
-  tax: Tax | undefined = undefined;
-  shipping: Shipping | undefined = undefined;
+  tax: Tax | undefined ;
+  shipping: Shipping | undefined ;
   orderDetailsTotalAmount: number = 0;
   orderTotal: number = 0;
   taxAmount: number = 0;
