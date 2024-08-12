@@ -15,43 +15,26 @@
       margin-left: 50px;
     }
 
-    pre {
-      font-size: 20px;
-      font-weight: bold;
+    pre,
+    p,
+    h3,
+    span,
+    strong {
       color: #007bff;
       margin-bottom: 20px;
     }
 
-    h3 {
-      font-weight: bold;
-    }
-
-    span {
-      font-size: 25px;
-      font-weight: bold;
-      color: #007bff;
-      margin-bottom: 20px;
-    }
-
+    pre,
     p {
       font-size: 20px;
       font-weight: bold;
-      color: #007bff;
-      margin-bottom: 20px;
     }
 
-    .total-amount,
-    .order-total {
-      font-size: 2px;
-      color: #28a745;
-      margin-bottom: 10px;
-    }
-
-    strong {
+    h3,
+    strong,
+    span {
       font-size: 25px;
       font-weight: bold;
-      color: #007bff;
-      margin-bottom: 20px;
     }
 
     .nav-tabs {
@@ -67,32 +50,19 @@
       border-radius: 0px;
       background-color: #f8f9fa;
       border-color: #dee2e6;
-
-      &.active {
-        color: #fff;
-        background-color: #007bff;
-        border-color: #007bff;
-      }
     }
 
-    .tab-content {
-      .tab-pane {
+    .nav-tabs .nav-link.active {
+      color: #fff;
+      background-color: #007bff;
+      border-color: #007bff;
+    }
 
-        padding: 20px;
-        border: 1px solid #dee2e6;
-        border-top: none;
-        background-color: #f8f9fa;
-
-        p {
-          font-weight: bold;
-          margin: 0 0 10px;
-          font-size: 25px;
-
-          &:first-of-type {
-            font-weight: bold;
-          }
-        }
-      }
+    .tab-content .tab-pane {
+      padding: 20px;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      background-color: #f8f9fa;
     }
   </style>
 </head>
@@ -150,10 +120,12 @@
     const uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59'; // Yetkilendirme tokenı
 
     // İstekleri yeniden denemek için yardımcı fonksiyon
-    async function attemptFetch(requestFunc, attempts = 5, delayMs = 1000) {
+    async function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 1000) {
       for (let i = 0; i < attempts; i++) {
         try {
-          return await requestFunc(); // İsteği gerçekleştir
+          const response = await fetch(url, options);
+          if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+          return response.json(); // JSON yanıtını döndür
         } catch (error) {
           if (i === attempts - 1) throw error; // Son denemede hata fırlat
           await new Promise(resolve => setTimeout(resolve, delayMs)); // Gecikme süresi
@@ -161,25 +133,26 @@
       }
     }
 
+    // API isteği oluşturmak için genel fonksiyon
+    function createApiRequest(endpoint, params = '') {
+      const url = `${apiUrl}/${endpoint}${params}`;
+      const options = { headers: { 'Authorization': `Bearer ${uniqueIdentifier}` } };
+      return fetchWithRetry(url, options);
+    }
+
     // Sipariş detaylarını almak için API isteği
     async function retrieveOrderDetails() {
-      const response = await attemptFetch(() => fetch(`${BASE_API_URL}/order`, { headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` } }));
-      if (!response.ok) throw new Error('Failed to fetch order details');
-      return response.json();
+      return createApiRequest('order');
     }
 
     // Vergi detaylarını almak için API isteği
     async function retrieveTaxDetails() {
-      const response = await attemptFetch(() => fetch(`${BASE_API_URL}/tax`, { headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` } }));
-      if (!response.ok) throw new Error('Failed to fetch tax details');
-      return response.json();
+      return createApiRequest('tax');
     }
 
     // Gönderim detaylarını almak için API isteği
     async function retrieveShippingDetails(weight) {
-      const response = await attemptFetch(() => fetch(`${BASE_API_URL}/shipping?weight=${weight}`, { headers: { 'Authorization': `Bearer ${AUTH_TOKEN}` } }));
-      if (!response.ok) throw new Error('Failed to fetch shipping details');
-      return response.json();
+      return createApiRequest('shipping');
     }
 
     // Sipariş öğelerini HTML formatında döndürme
@@ -217,13 +190,15 @@
     // Sipariş özetini almak ve sayfada göstermek için ana işlev
     async function loadOrderSummary() {
       try {
-        const orderData = await retrieveOrderDetails(); // Sipariş detaylarını al
-        const taxData = await retrieveTaxDetails(); // Vergi detaylarını al
-        const totalWeight = orderData.items.reduce((total, item) => total + item.weight * item.qty, 0); // Toplam ağırlığı hesapla
-        const shippingData = await retrieveShippingDetails(totalWeight); // Gönderim detaylarını al
+        const [orderData, taxData] = await Promise.all([
+          fetchData('order'),
+          fetchData('tax')
+        ]);//Sipariş ve vergi detaylarının al
+        const totalWeight = orderData.items.reduce((total, item) => total + item.weight * item.qty, 0); // Toplam ağırlığı hesaplanıyor
+        const shippingData = await fetchData('shipping', `?weight=${totalWeight}`);// Gönderim detaylarını al
 
-        const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0); // Öğeler toplamını hesapla
-        const taxAmount = itemsTotal * taxData.rate; // Vergi miktarını hesapla
+        const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0); // Öğeler toplamını hesaplanıyor
+        const taxAmount = itemsTotal * taxData.rate; // Vergi miktarını hesaplanıyor
         const shippingCost = shippingData.cost; // Gönderim maliyetini al
 
         // Verileri sayfada göster
