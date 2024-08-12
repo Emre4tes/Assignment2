@@ -120,7 +120,7 @@
     const uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59'; // Yetkilendirme tokenı
 
     // İstekleri yeniden denemek için yardımcı fonksiyon
-    async function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 1000) {
+    async function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 100) {
       for (let i = 0; i < attempts; i++) {
         try {
           const response = await fetch(url, options);
@@ -133,27 +133,48 @@
       }
     }
 
-    // API isteği oluşturmak için genel fonksiyon
-    function createApiRequest(endpoint, params = '') {
-      const url = `${apiUrl}/${endpoint}${params}`;
-      const options = { headers: { 'Authorization': `Bearer ${uniqueIdentifier}` } };
-      return fetchWithRetry(url, options);
-    }
+   // API isteği oluşturmak için genel fonksiyon
+function createApiRequest(endpoint, params = '') {
+  const url = `${apiUrl}/${endpoint}${params}`;
+  const options = {
+    headers: { 'Authorization': `Bearer ${uniqueIdentifier}` }
+  };
+  return fetchWithRetry(url, options);
+}
 
-    // Sipariş detaylarını almak için API isteği
-    async function retrieveOrderDetails() {
-      return createApiRequest('order');
-    }
+// Sipariş detaylarını almak için API isteği
+async function retrieveOrderDetails() {
+  try {
+    const orderData = await createApiRequest('order');
+    return orderData;
+  } catch (error) {
+    console.error('Error retrieving order details:', error);
+    throw error;
+  }
+}
 
-    // Vergi detaylarını almak için API isteği
-    async function retrieveTaxDetails() {
-      return createApiRequest('tax');
-    }
+// Vergi detaylarını almak için API isteği
+async function retrieveTaxDetails() {
+  try {
+    const taxData = await createApiRequest('tax');
+    return taxData;
+  } catch (error) {
+    console.error('Error retrieving tax details:', error);
+    throw error;
+  }
+}
 
-    // Gönderim detaylarını almak için API isteği
-    async function retrieveShippingDetails(weight) {
-      return createApiRequest('shipping');
-    }
+// Gönderim detaylarını almak için API isteği
+async function retrieveShippingDetails(weight) {
+  try {
+    const shippingData = await createApiRequest('shipping', `?weight=${weight}`);
+    return shippingData;
+  } catch (error) {
+    console.error('Error retrieving shipping details:', error);
+    throw error;
+  }
+}
+
 
     // Sipariş öğelerini HTML formatında döndürme
     function displayItems(items) {
