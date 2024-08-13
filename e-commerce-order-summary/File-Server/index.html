@@ -7,6 +7,7 @@
   <title>Order Summary Alternative</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    /* Stil ayarları */
     a {
       font-size: 40px;
       font-weight: bold;
@@ -111,23 +112,21 @@
 
   <script>
     // API isteği yapmak için Deferred kullanımı
-
-    function OrderSummary() {
-      function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 100) {
-      var deferred = $.Deferred();
+    function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 100) {
+      var deferred = $.Deferred(); // Yeni bir Deferred nesnesi oluştur
       function attemptFetch(remainingAttempts) {
-        $.ajax(url, options)
-          .done(data => deferred.resolve(data))
+        $.ajax(url, options) // AJAX isteği yap(arka planda sunucu ile veri alışverişi yaparak sayfanın bir kısmını güncellemek veya veri almak anlamına gelir.)
+          .done(data => deferred.resolve(data)) // Başarıyla sonuçlanırsa resolve ile sonuç döndür
           .fail((jqXHR, textStatus) => {
             if (remainingAttempts <= 1) {
-              deferred.reject(new Error(textStatus));
+              deferred.reject(new Error(textStatus)); // Tüm deneme hakları biterse hata döndür
             } else {
-              setTimeout(() => attemptFetch(remainingAttempts - 1), delayMs);
+              setTimeout(() => attemptFetch(remainingAttempts - 1), delayMs); // Yeniden deneme işlemi
             }
           });
       }
-      attemptFetch(attempts);
-      return deferred.promise();
+      attemptFetch(attempts); // İlk denemeyi başlat
+      return deferred.promise(); // Promise nesnesini döndür
     }
 
     function createApiRequest(endpoint, params = '', attempts = 5, delayMs = 100) {
@@ -142,104 +141,106 @@
       return fetchWithRetry(url, options, attempts, delayMs);
     }
 
+    function OrderSummary() {//Burada closure kullanarak verilere dısarda bir yerdeordersummary üzerinden ulaşılabilinecek
       // Sipariş, vergi ve gönderim detaylarını almak
       function retrieveOrderDetails() {
-        return createApiRequest('order');
+        return createApiRequest('order'); // Sipariş detaylarını al
       }
 
       function retrieveTaxDetails() {
-        return createApiRequest('tax');
+        return createApiRequest('tax'); // Vergi detaylarını al
       }
 
       function retrieveShippingDetails(weight) {
-        return createApiRequest('shipping', `?weight=${weight}`);
+        return createApiRequest('shipping', `?weight=${weight}`); // Gönderim detaylarını al
       }
 
+      // İç fonksiyonları dışarıya döndür
       return {
         retrieveOrderDetails,
         retrieveShippingDetails,
         retrieveTaxDetails
       };
     }
-    const helpers ={
-      // Diğer yardımcı fonksiyonlar
-    displayItems(items) {
-      return items.map(item => `
-        <div>${item.name} - $${item.price.toFixed(2)} x ${item.qty}</div>
-      `).join('');
-    },
 
-     displayItemsTotal(amount) {
-      return `Items Total: $${amount.toFixed(2)}`;
-    },
+    // Yardımcı fonksiyonlar
+    const helpers = {
+      displayItems(items) {
+        // Sipariş item'larını HTML olarak döndür
+        return items.map(item => `
+          <div>${item.name} - $${item.price.toFixed(2)} x ${item.qty}</div>
+        `).join('');
+      },
 
-    displayShippingInfo(shipping) {
-      return `
-        <strong>Carrier:</strong> ${shipping.carrier}<br>
-        <strong>Address:</strong> ${shipping.address}<br>
-        <strong>Cost:</strong> $${shipping.cost.toFixed(2)}
-      `;
-    },
+      displayItemsTotal(amount) {
+        // Item'ların toplamını HTML olarak döndür
+        return `Items Total: $${amount.toFixed(2)}`;
+      },
 
-    displayTaxDetails(tax) {
-      return `Tax Rate: ${(tax.rate * 100).toFixed(2)}%`;
-    },
+      displayShippingInfo(shipping) {
+        // Gönderim bilgilerini HTML olarak döndür
+        return `
+          <strong>Carrier:</strong> ${shipping.carrier}<br>
+          <strong>Address:</strong> ${shipping.address}<br>
+          <strong>Cost:</strong> $${shipping.cost.toFixed(2)}
+        `;
+      },
 
-    displayGrandTotal(itemsTotal, shippingCost, taxAmount) {
-      const grandTotal = itemsTotal + shippingCost + taxAmount;
-      return `Total: $${grandTotal.toFixed(2)}`;
-    }
+      displayTaxDetails(tax) {
+        // Vergi detaylarını HTML olarak döndür
+        return `Tax Rate: ${(tax.rate * 100).toFixed(2)}%`;
+      },
+
+      displayGrandTotal(itemsTotal, shippingCost, taxAmount) {
+        // Toplam tutarı hesaplayıp HTML olarak döndür
+        const grandTotal = itemsTotal + shippingCost + taxAmount;
+        return `Total: $${grandTotal.toFixed(2)}`;
+      }
     };
 
     $(document).ready(function () {
+      const orderSummary = OrderSummary(); // OrderSummary fonksiyonunu çağırarak örneğini oluştur
 
-    const orderSummary = OrderSummary();
+      function loadOrderSummary() {
+        let orderData,shippingData;
 
-    function loadOrderSummary() {
-      var orderData, shippingData;
+        orderSummary.retrieveOrderDetails() // Sipariş detaylarını al
+          .done(data => {//.done  İşlem başarılı olduğunda çalışır.
+            console.log('Order Data:', data);
+            orderData = data;
+            $('#items-list').html(helpers.displayItems(orderData.items)); // Item'ları görüntüle
+            const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0);
+            $('#items-total').text(helpers.displayItemsTotal(itemsTotal)); // Item'ların toplamını görüntüle
+            const totalWeight = orderData.items.reduce((total, item) => total + item.weight * item.qty, 0);
 
-      var orderPromise = orderSummary.retrieveOrderDetails();
-      var taxPromise, shippingPromise;
+            return orderSummary.retrieveShippingDetails(totalWeight);//gönderim detaylarını al
+          })
 
-      orderPromise
-        .done(data => {
-          console.log('Order Data:', data);
-          orderData = data;
-          $('#items-list').html(displayItems(orderData.items));
-          const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0);
-          $('#items-total').text(displayItemsTotal(itemsTotal));
+          .done(data => {
+            console.log('Shipping Data:', data);
+            shippingData = data;
+            $('#shipping-info').html(helpers.displayShippingInfo(shippingData)); // Gönderim bilgilerini görüntüle
 
-          const totalWeight = orderData.items.reduce((total, item) => total + item.weight * item.qty, 0);
-          shippingPromise = orderSummary.retrieveShippingDetails(totalWeight);
+            return orderSummary.retrieveTaxDetails();
+          })
 
-          return shippingPromise;
-        })
-        .done(data => {
-          console.log('Shipping Data:', data);
-          shippingData = data;
-          $('#shipping-info').html(displayShippingInfo(shippingData));
+          .done(data => {
+            console.log('Tax Data:', data);
+            $('#tax-summary').text(helpers.displayTaxDetails(data)); // Vergi detaylarını görüntüle
 
-          taxPromise = orderSummary.retrieveTaxDetails();
+            const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0);
+            const taxAmount = itemsTotal * data.rate;
+            const shippingCost = shippingData.cost;
 
-          return taxPromise;
-        })
-        .done(data => {
-          console.log('Tax Data:', data);
-          $('#tax-summary').text(displayTaxDetails(data));
+            $('#order-total').text(helpers.displayGrandTotal(itemsTotal, shippingCost, taxAmount)); // Toplam tutarı görüntüle
+          })
+          .fail(error => {//.fail işlem başarısız oldugunda calışır
+            console.error('Error loading order summary', error);
+            $('#order-total').text('Failed to load order summary'); // Hata mesajı
+          });
+      }
 
-          const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0);
-          const taxAmount = itemsTotal * data.rate;
-          const shippingCost = shippingData.cost;
-
-          $('#order-total').text(displayGrandTotal(itemsTotal, shippingCost, taxAmount));
-        })
-        .fail(error => {
-          console.error('Error loading order summary', error);
-          $('#order-total').text('Failed to load order summary');
-        });
-    }
-
-      loadOrderSummary();
+      loadOrderSummary(); // Order summary'yi yükle
     });
 
   </script>
