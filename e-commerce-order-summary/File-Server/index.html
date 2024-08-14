@@ -113,13 +113,13 @@
   <script>
     // API isteği yapmak için Deferred kullanımı
     function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 100) {
-      var deferred = $.Deferred(); // Yeni bir Deferred nesnesi oluştur
+      var deferred = $.Deferred();                                    // Yeni bir Deferred nesnesi oluştur
       function attemptFetch(remainingAttempts) {
-        $.ajax(url, options) // AJAX isteği yap(arka planda sunucu ile veri alışverişi yaparak sayfanın bir kısmını güncellemek veya veri almak anlamına gelir.)
-          .done(data => deferred.resolve(data)) // Başarıyla sonuçlanırsa resolve ile sonuç döndür
+        $.ajax(url, options)                                        // AJAX isteği yap(arka planda sunucu ile veri alışverişi yaparak sayfanın bir kısmını güncellemek veya veri almak anlamına gelir.)
+          .done(data => deferred.resolve(data))                    // Başarıyla sonuçlanırsa resolve ile sonuç döndür
           .fail((jqXHR, textStatus) => {
             if (remainingAttempts <= 1) {
-              deferred.reject(new Error(textStatus)); // Tüm deneme hakları biterse hata döndür
+              deferred.reject(new Error(textStatus));             // Tüm deneme hakları biterse hata döndür
             } else {
               setTimeout(() => attemptFetch(remainingAttempts - 1), delayMs); // Yeniden deneme işlemi
             }
@@ -129,7 +129,7 @@
       return deferred.promise(); // Promise nesnesini döndür
     }
 
-    function createApiRequest(endpoint, params = '', attempts = 5, delayMs = 100) {
+    const createApiRequest = function(endpoint, params = '', attempts = 5, delayMs = 100) {
       const apiUrl = 'http://localhost:3000';
       const uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59';
       const url = `${apiUrl}/${endpoint}${params}`;
@@ -141,8 +141,8 @@
       return fetchWithRetry(url, options, attempts, delayMs);
     }
 
-    function OrderSummary() {//Burada closure kullanarak verilere dısarda bir yerdeordersummary üzerinden ulaşılabilinecek
-      // Sipariş, vergi ve gönderim detaylarını almak
+    function OrderSummary() {                                //Burada closure kullanarak verilere dısarda bir yerdeordersummary üzerinden ulaşılabilinecek
+                                                              // Sipariş, vergi ve gönderim detaylarını almak
       function retrieveOrderDetails() {
         return createApiRequest('order'); // Sipariş detaylarını al
       }
@@ -163,7 +163,7 @@
       };
     }
 
-    // Yardımcı fonksiyonlar
+    // Yardımcı fonksiyonlar helpers nesnesinde topladım burda
     const helpers = {
       displayItems(items) {
         // Sipariş item'larını HTML olarak döndür
@@ -234,7 +234,7 @@
 
             $('#order-total').text(helpers.displayGrandTotal(itemsTotal, shippingCost, taxAmount)); // Toplam tutarı görüntüle
           })
-          .fail(error => {//.fail işlem başarısız oldugunda calışır
+          .fail(error => {
             console.error('Error loading order summary', error);
             $('#order-total').text('Failed to load order summary'); // Hata mesajı
           });
