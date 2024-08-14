@@ -113,13 +113,13 @@
   <script>
     // API isteği yapmak için Deferred kullanımı
     function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 100) {
-      var deferred = $.Deferred();                                    // Yeni bir Deferred nesnesi oluştur
+      var deferred = $.Deferred();                                   
       function attemptFetch(remainingAttempts) {
         $.ajax(url, options)                                        // AJAX isteği yap(arka planda sunucu ile veri alışverişi yaparak sayfanın bir kısmını güncellemek veya veri almak anlamına gelir.)
           .done(data => deferred.resolve(data))                    // Başarıyla sonuçlanırsa resolve ile sonuç döndür
           .fail((jqXHR, textStatus) => {
             if (remainingAttempts <= 1) {
-              deferred.reject(new Error(textStatus));             // Tüm deneme hakları biterse hata döndür
+              deferred.reject(new Error(textStatus));             // Tüm deneme hakları biterse hata döndürür
             } else {
               setTimeout(() => attemptFetch(remainingAttempts - 1), delayMs); // Yeniden deneme işlemi
             }
