@@ -164,42 +164,52 @@
     }
 
     // Yardımcı fonksiyonlar helpers nesnesinde topladım burda
-    const helpers = {
-      displayItems(items) {
+    function helpers (){
+      function displayItems(items) {
         // Sipariş item'larını HTML olarak döndür
         return items.map(item => `
           <div>${item.name} - $${item.price.toFixed(2)} x ${item.qty}</div>
         `).join('');
-      },
+      }
 
-      displayItemsTotal(amount) {
+      function displayItemsTotal(amount) {
         // Item'ların toplamını HTML olarak döndür
         return `Items Total: $${amount.toFixed(2)}`;
-      },
+      }
 
-      displayShippingInfo(shipping) {
+      function displayShippingInfo(shipping) {
         // Gönderim bilgilerini HTML olarak döndür
         return `
           <strong>Carrier:</strong> ${shipping.carrier}<br>
           <strong>Address:</strong> ${shipping.address}<br>
           <strong>Cost:</strong> $${shipping.cost.toFixed(2)}
         `;
-      },
+      }
 
-      displayTaxDetails(tax) {
+      function displayTaxDetails(tax) {
         // Vergi detaylarını HTML olarak döndür
         return `Tax Rate: ${(tax.rate * 100).toFixed(2)}%`;
-      },
+      }
 
-      displayGrandTotal(itemsTotal, shippingCost, taxAmount) {
+      function displayGrandTotal(itemsTotal, shippingCost, taxAmount) {
         // Toplam tutarı hesaplayıp HTML olarak döndür
         const grandTotal = itemsTotal + shippingCost + taxAmount;
         return `Total: $${grandTotal.toFixed(2)}`;
       }
-    };
+      return{
+      displayGrandTotal,
+      displayItems,
+      displayItemsTotal,
+      displayShippingInfo,
+      displayTaxDetails
+      };
+    }
 
     $(document).ready(function () {
       const orderSummary = OrderSummary(); // OrderSummary fonksiyonunu çağırarak örneğini oluştur
+
+      const helpersFunction = helpers();
+
 
       function loadOrderSummary() {
         let orderData,shippingData;
@@ -208,9 +218,9 @@
           .done(data => {//.done  İşlem başarılı olduğunda çalışır.
             console.log('Order Data:', data);
             orderData = data;
-            $('#items-list').html(helpers.displayItems(orderData.items)); // Item'ları görüntüle
+            $('#items-list').html(helpersFunction.displayItems(orderData.items)); // Item'ları görüntüle
             const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0);
-            $('#items-total').text(helpers.displayItemsTotal(itemsTotal)); // Item'ların toplamını görüntüle
+            $('#items-total').text(helpersFunction.displayItemsTotal(itemsTotal)); // Item'ların toplamını görüntüle
             const totalWeight = orderData.items.reduce((total, item) => total + item.weight * item.qty, 0);
 
             return orderSummary.retrieveShippingDetails(totalWeight);//gönderim detaylarını al
@@ -219,20 +229,20 @@
           .done(data => {
             console.log('Shipping Data:', data);
             shippingData = data;
-            $('#shipping-info').html(helpers.displayShippingInfo(shippingData)); // Gönderim bilgilerini görüntüle
+            $('#shipping-info').html(helpersFunction.displayShippingInfo(shippingData)); // Gönderim bilgilerini görüntüle
 
             return orderSummary.retrieveTaxDetails();
           })
 
           .done(data => {
             console.log('Tax Data:', data);
-            $('#tax-summary').text(helpers.displayTaxDetails(data)); // Vergi detaylarını görüntüle
+            $('#tax-summary').text(helpersFunction.displayTaxDetails(data)); // Vergi detaylarını görüntüle
 
             const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0);
             const taxAmount = itemsTotal * data.rate;
             const shippingCost = shippingData.cost;
 
-            $('#order-total').text(helpers.displayGrandTotal(itemsTotal, shippingCost, taxAmount)); // Toplam tutarı görüntüle
+            $('#order-total').text(helpersFunction.displayGrandTotal(itemsTotal, shippingCost, taxAmount)); // Toplam tutarı görüntüle
           })
           .fail(error => {
             console.error('Error loading order summary', error);
