@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Summary Alternative</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Stil ayarları */
+    a {
+      font-size: 40px;
+      font-weight: bold;
+      color: #007bff;
+      margin-bottom: 20px;
+      margin-left: 50px;
+    }
+
+    pre,
+    p,
+    h3,
+    span,
+    strong {
+      color: #007bff;
+      margin-bottom: 20px;
+    }
+
+    pre,
+    p {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    h3,
+    strong,
+    span {
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    .nav-tabs {
+      margin-bottom: 20px;
+      background-color: #007bff;
+      width: 100%;
+    }
+
+    .nav-tabs .nav-link {
+      color: #007bff;
+      font-size: 30px;
+      font-weight: bold;
+      border-radius: 0px;
+      background-color: #f8f9fa;
+      border-color: #dee2e6;
+    }
+
+    .nav-tabs .nav-link.active {
+      color: #fff;
+      background-color: #007bff;
+      border-color: #007bff;
+    }
+
+    .tab-content .tab-pane {
+      padding: 20px;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      background-color: #f8f9fa;
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="service.js"></script>
+  <script src="interceptor.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <a class="navbar-brand" href="http://localhost:4200">E-Commerce App</a>
+
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="order-tab" data-bs-toggle="tab" data-bs-target="#order" type="button"
+          role="tab" aria-controls="order" aria-selected="true">Order</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="shipping-tab" data-bs-toggle="tab" data-bs-target="#shipping" type="button"
+          role="tab" aria-controls="shipping" aria-selected="false">Shipping</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tax-tab" data-bs-toggle="tab" data-bs-target="#tax" type="button" role="tab"
+          aria-controls="tax" aria-selected="false">Tax</button>
+      </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="myTabContent">
+      <div class="tab-pane fade show active" id="order" role="tabpanel" aria-labelledby="order-tab">
+        <h3>Order Details:</h3>
+        <div id="items-list"></div>
+        <div class="order-summary-section">
+          <h3>Order Details Total:</h3>
+          <span id="items-total"></span>
+        </div>
+        <div class="order-summary-section">
+          <h3>Order Total:</h3>
+          <span id="order-total"></span>
+        </div>
+        <div class="order-summary-section">
+          <h3>Tax Amount:</h3>
+          <span id="tax-info"></span>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="shipping" role="tabpanel" aria-labelledby="shipping-tab">
+        <h3>Shipping:</h3>
+        <pre id="shipping-info"></pre>
+      </div>
+      <div class="tab-pane fade" id="tax" role="tabpanel" aria-labelledby="tax-tab">
+        <h3>Tax:</h3>
+        <span id="tax-summary"></span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { OrderSummary, helpers } from './service.js';
+
+    $(document).ready(function () {
+        // OrderSummary servisinin bir örneğini oluştur
+        var orderSummary = OrderSummary();
+
+        // Sipariş detaylarını al ve sayfada göster
+        orderSummary.retrieveOrderDetails()
+            .then(order => {
+                $('#items-list').html(helpers.displayItems(order.items));
+                $('#items-total').html(helpers.displayItemsTotal(order.amount));
+            })
+            .catch(error => console.error(error));
+
+        // Kargo bilgilerini al ve sayfada göster
+        orderSummary.retrieveShippingDetails(5)
+            .then(shipping => {
+                $('#shipping-info').html(helpers.displayShippingInfo(shipping));
+            })
+            .catch(error => console.error(error));
+
+        // Vergi detaylarını al ve sayfada göster
+        orderSummary.retrieveTaxDetails()
+            .then(tax => {
+                const itemsTotal = parseFloat($('#items-total').text().replace('Items Total: $', ''));
+                const taxAmount = itemsTotal * tax.rate;
+                $('#tax-info').html(helpers.displayTaxDetails(tax));
+                $('#tax-summary').html(`Tax Amount: $${taxAmount.toFixed(2)}`);
+                $('#order-total').html(helpers.displayGrandTotal(itemsTotal, 0, taxAmount)); // 0 burada kargo maliyetini temsil eder
+            })
+            .catch(error => console.error(error));
+    });
+  </script>
+</body>
+
+</html>
