@@ -15,6 +15,7 @@
       margin-bottom: 20px;
       margin-left: 50px;
     }
+
     pre,
     p,
     h3,
@@ -23,22 +24,26 @@
       color: #007bff;
       margin-bottom: 20px;
     }
+
     pre,
     p {
       font-size: 20px;
       font-weight: bold;
     }
+
     h3,
     strong,
     span {
       font-size: 25px;
       font-weight: bold;
     }
+
     .nav-tabs {
       margin-bottom: 20px;
       background-color: #007bff;
       width: 100%;
     }
+
     .nav-tabs .nav-link {
       color: #007bff;
       font-size: 30px;
@@ -47,11 +52,13 @@
       background-color: #f8f9fa;
       border-color: #dee2e6;
     }
+
     .nav-tabs .nav-link.active {
       color: #fff;
       background-color: #007bff;
       border-color: #007bff;
     }
+
     .tab-content .tab-pane {
       padding: 20px;
       border: 1px solid #dee2e6;
@@ -61,6 +68,8 @@
   </style>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="service.js"></script>
+  <script src="interceptor.js"></script>
 </head>
 
 <body>
@@ -110,149 +119,39 @@
     </div>
   </div>
 
-  <script>
-    // API isteği yapmak için Deferred kullanımı
-    function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 100) {
-      var deferred = $.Deferred();                                    // Yeni bir Deferred nesnesi oluştur
-      function attemptFetch(remainingAttempts) {
-        $.ajax(url, options)                                        // AJAX isteği yap(arka planda sunucu ile veri alışverişi yaparak sayfanın bir kısmını güncellemek veya veri almak anlamına gelir.)
-          .done(data => deferred.resolve(data))                    // Başarıyla sonuçlanırsa resolve ile sonuç döndür
-          .fail((jqXHR, textStatus) => {
-            if (remainingAttempts <= 1) {
-              deferred.reject(new Error(textStatus));             // Tüm deneme hakları biterse hata döndür
-            } else {
-              setTimeout(() => attemptFetch(remainingAttempts - 1), delayMs); // Yeniden deneme işlemi
-            }
-          });
-      }
-      attemptFetch(attempts); // İlk denemeyi başlat
-      return deferred.promise(); // Promise nesnesini döndür
-    }
-
-    const createApiRequest = function(endpoint, params = '', attempts = 5, delayMs = 100) {
-      const apiUrl = 'http://localhost:3000';
-      const uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59';
-      const url = `${apiUrl}/${endpoint}${params}`;
-      const options = {
-        headers: { 'Authorization': `Bearer ${uniqueIdentifier}` },
-        dataType: 'json'
-      };
-
-      return fetchWithRetry(url, options, attempts, delayMs);
-    }
-
-    function OrderSummary() {                                //Burada closure kullanarak verilere dısarda bir yerdeordersummary üzerinden ulaşılabilinecek
-                                                              // Sipariş, vergi ve gönderim detaylarını almak
-      function retrieveOrderDetails() {
-        return createApiRequest('order'); // Sipariş detaylarını al
-      }
-
-      function retrieveTaxDetails() {
-        return createApiRequest('tax'); // Vergi detaylarını al
-      }
-
-      function retrieveShippingDetails(weight) {
-        return createApiRequest('shipping', `?weight=${weight}`); // Gönderim detaylarını al
-      }
-
-      // İç fonksiyonları dışarıya döndür
-      return {
-        retrieveOrderDetails,
-        retrieveShippingDetails,
-        retrieveTaxDetails
-      };
-    }
-
-    // Yardımcı fonksiyonlar helpers nesnesinde topladım burda
-    function helpers (){
-      function displayItems(items) {
-        // Sipariş item'larını HTML olarak döndür
-        return items.map(item => `
-          <div>${item.name} - $${item.price.toFixed(2)} x ${item.qty}</div>
-        `).join('');
-      }
-
-      function displayItemsTotal(amount) {
-        // Item'ların toplamını HTML olarak döndür
-        return `Items Total: $${amount.toFixed(2)}`;
-      }
-
-      function displayShippingInfo(shipping) {
-        // Gönderim bilgilerini HTML olarak döndür
-        return `
-          <strong>Carrier:</strong> ${shipping.carrier}<br>
-          <strong>Address:</strong> ${shipping.address}<br>
-          <strong>Cost:</strong> $${shipping.cost.toFixed(2)}
-        `;
-      }
-
-      function displayTaxDetails(tax) {
-        // Vergi detaylarını HTML olarak döndür
-        return `Tax Rate: ${(tax.rate * 100).toFixed(2)}%`;
-      }
-
-      function displayGrandTotal(itemsTotal, shippingCost, taxAmount) {
-        // Toplam tutarı hesaplayıp HTML olarak döndür
-        const grandTotal = itemsTotal + shippingCost + taxAmount;
-        return `Total: $${grandTotal.toFixed(2)}`;
-      }
-      return{
-      displayGrandTotal,
-      displayItems,
-      displayItemsTotal,
-      displayShippingInfo,
-      displayTaxDetails
-      };
-    }
+  <script type="module">
+    import { OrderSummary, helpers } from './service.js';
 
     $(document).ready(function () {
-      const orderSummary = OrderSummary(); // OrderSummary fonksiyonunu çağırarak örneğini oluştur
+        // OrderSummary servisinin bir örneğini oluştur
+        var orderSummary = OrderSummary();
 
-      const helpersFunction = helpers();
+        // Sipariş detaylarını al ve sayfada göster
+        orderSummary.retrieveOrderDetails()
+            .then(order => {
+                $('#items-list').html(helpers.displayItems(order.items));
+                $('#items-total').html(helpers.displayItemsTotal(order.amount));
+            })
+            .catch(error => console.error(error));
 
+        // Kargo bilgilerini al ve sayfada göster
+        orderSummary.retrieveShippingDetails(5)
+            .then(shipping => {
+                $('#shipping-info').html(helpers.displayShippingInfo(shipping));
+            })
+            .catch(error => console.error(error));
 
-      function loadOrderSummary() {
-        let orderData,shippingData;
-
-        orderSummary.retrieveOrderDetails() // Sipariş detaylarını al
-          .done(data => {//.done  İşlem başarılı olduğunda çalışır.
-            console.log('Order Data:', data);
-            orderData = data;
-            $('#items-list').html(helpersFunction.displayItems(orderData.items)); // Item'ları görüntüle
-            const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0);
-            $('#items-total').text(helpersFunction.displayItemsTotal(itemsTotal)); // Item'ların toplamını görüntüle
-            const totalWeight = orderData.items.reduce((total, item) => total + item.weight * item.qty, 0);
-
-            return orderSummary.retrieveShippingDetails(totalWeight);//gönderim detaylarını al
-          })
-
-          .done(data => {
-            console.log('Shipping Data:', data);
-            shippingData = data;
-            $('#shipping-info').html(helpersFunction.displayShippingInfo(shippingData)); // Gönderim bilgilerini görüntüle
-
-            return orderSummary.retrieveTaxDetails();
-          })
-
-          .done(data => {
-            console.log('Tax Data:', data);
-            $('#tax-summary').text(helpersFunction.displayTaxDetails(data)); // Vergi detaylarını görüntüle
-
-            const itemsTotal = orderData.items.reduce((total, item) => total + item.price * item.qty, 0);
-            const taxAmount = itemsTotal * data.rate;
-            const shippingCost = shippingData.cost;
-
-            $('#order-total').text(helpersFunction.displayGrandTotal(itemsTotal, shippingCost, taxAmount)); // Toplam tutarı görüntüle
-          })
-          .fail(error => {
-            console.error('Error loading order summary', error);
-            $('#order-total').text('Failed to load order summary'); // Hata mesajı
-          });
-      }
-
-      loadOrderSummary(); // Order summary'yi yükle
+        // Vergi detaylarını al ve sayfada göster
+        orderSummary.retrieveTaxDetails()
+            .then(tax => {
+                const itemsTotal = parseFloat($('#items-total').text().replace('Items Total: $', ''));
+                const taxAmount = itemsTotal * tax.rate;
+                $('#tax-info').html(helpers.displayTaxDetails(tax));
+                $('#tax-summary').html(`Tax Amount: $${taxAmount.toFixed(2)}`);
+                $('#order-total').html(helpers.displayGrandTotal(itemsTotal, 0, taxAmount)); // 0 burada kargo maliyetini temsil eder
+            })
+            .catch(error => console.error(error));
     });
-
   </script>
 </body>
 
