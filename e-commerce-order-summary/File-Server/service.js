@@ -28,7 +28,7 @@ function fetchWithRetry(url, options = {}, attempts = 5, delayMs = 100) {
   return deferred.promise();
 }
 
-// API çağrılarını yönetmek için fonksiyon
+
 const createApiRequest = function (endpoint, params = '', attempts = 5, delayMs = 100) {
   const apiUrl = 'http://localhost:3000';
   const uniqueIdentifier = '3b5c6d1e-8a6a-44c8-9baf-7a2b4c1e9c59';
@@ -41,7 +41,6 @@ const createApiRequest = function (endpoint, params = '', attempts = 5, delayMs 
   return fetchWithRetry(url, options, attempts, delayMs);
 }
 
-// Sipariş, vergi ve gönderim detaylarını almak için servis fonksiyonları
 var OrderSummary = function() {
   function retrieveOrderDetails() {
       return createApiRequest('order', '', 5, 100);
@@ -63,7 +62,7 @@ var OrderSummary = function() {
 }
 
 // Yardımcı fonksiyonlar
-function helpers() {
+var helpers =function () {
   function displayItems(items) {
       return items.map(item => `
           <div>${item.name} - $${item.price.toFixed(2)} x ${item.qty}</div>

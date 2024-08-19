@@ -1,5 +1,3 @@
-// interceptor.js
-
 (function($) {
   // Tüm AJAX isteklerini yakalayacak bir interceptor ekliyoruz
   $.ajaxSetup({
