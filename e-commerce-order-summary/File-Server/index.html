@@ -119,38 +119,34 @@
     </div>
   </div>
 
-<script type="module">
-import { OrderSummary, helpers } from './service.js';
+  <script type="module">
+    import { OrderSummary, helpers } from './service.js';
 
     $(document).ready(function () {// jQuery kullanarak bir sayfanın tüm elemanları yüklendiğinde belirli bir kodun çalışmasını sağlar
 
-        var orderSummary = OrderSummary();
 
-        // Sipariş detaylarını al ve sayfada göster
-        orderSummary.retrieveOrderDetails()
-            .then(order => {
-                $('#items-list').html(helpers.displayItems(order.items));
-                $('#items-total').html(helpers.displayItemsTotal(order.amount));
-            })
-            .catch(error => console.error(error));
+      orderSummary.retrieveOrderDetails()
+        .then(order => {
+          $('#items-list').html(helpers.displayItems(order.items));
+          $('#items-total').html(helpers.displayItemsTotal(order.amount));
+        })
+        .catch(error => console.error(error));
 
-        // Kargo bilgilerini al ve sayfada göster
-        orderSummary.retrieveShippingDetails(5)
-            .then(shipping => {
-                $('#shipping-info').html(helpers.displayShippingInfo(shipping));
-            })
-            .catch(error => console.error(error));
+      orderSummary.retrieveShippingDetails()
+        .then(shipping => {
+          $('#shipping-info').html(helpers.displayShippingInfo(shipping));
+        })
+        .catch(error => console.error(error));
 
-        // Vergi detaylarını al ve sayfada göster
-        orderSummary.retrieveTaxDetails()
-            .then(tax => {
-                const itemsTotal = parseFloat($('#items-total').text().replace('Items Total: $', ''));
-                const taxAmount = itemsTotal * tax.rate;
-                $('#tax-info').html(helpers.displayTaxDetails(tax));
-                $('#tax-summary').html(`Tax Amount: $${taxAmount.toFixed(2)}`);
-                $('#order-total').html(helpers.displayGrandTotal(itemsTotal, 0, taxAmount)); // 0 burada kargo maliyetini temsil eder
-            })
-            .catch(error => console.error(error));
+      orderSummary.retrieveTaxDetails()
+        .then(tax => {
+          const itemsTotal = parseFloat($('#items-total').text().replace('Items Total: $', ''));
+          const taxAmount = itemsTotal * tax.rate;
+          $('#tax-info').html(helpers.displayTaxDetails(tax));
+          $('#tax-summary').html(`Tax Amount: $${taxAmount.toFixed(2)}`);
+          $('#order-total').html(helpers.displayGrandTotal(itemsTotal, 0, taxAmount));
+        })
+        .catch(error => console.error(error));
     });
   </script>
 </body>
